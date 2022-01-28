@@ -1,4 +1,5 @@
 pub mod disasm;
+pub mod yul;
 #[cfg(test)]
 mod tests {
     #[test]
