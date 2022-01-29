@@ -204,40 +204,7 @@ pub fn parse(input: &'static str) -> Vec<Token> {
                 } else {
                     Token::new(TokenKind::InvalidIdentifier, 1)
                 }
-            } // _ => {
-              //     if c.is_alphabetic() {
-              //         let mut value = String::new();
-              //         while let Some(c) = chars.next() {
-              //             if c.is_alphanumeric() {
-              //                 value.push(c);
-              //             } else {
-              //                 break;
-              //             }
-              //         }
-              //         Token::new(TokenKind::Identifier, value.len())
-              //     } else if c.is_numeric() {
-              //         let mut value = String::new();
-              //         while let Some(c) = chars.next() {
-              //             if c.is_numeric() {
-              //                 value.push(c);
-              //             } else {
-              //                 break;
-              //             }
-              //         }
-              //         dbg!(&value);
-              //         Token::new(
-              //             TokenKind::Literal {
-              //                 kind: LiteralKind::Int {
-              //                     base: Base::Decimal,
-              //                 },
-              //                 value: value.clone(),
-              //             },
-              //             value.clone().len(),
-              //         )
-              //     } else {
-              //         Token::new(TokenKind::InvalidIdentifier, 1)
-              //     }
-              // }
+            }
         };
         tokens.push(token);
     }
