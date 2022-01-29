@@ -13,3 +13,7 @@ hex-literal = "0.3"
 [[bin]]
 name = "disasm"
 path = "bin/disasm.rs"
+
+[[bin]]
+name = "lex"
+path = "bin/lex.rs"

@@ -136,13 +136,15 @@ pub fn parse(input: &'static str) -> Vec<Token> {
                 value.push(c);
                 let mut base_specified = false;
                 while let Some(c) = chars.next() {
-                    if !c.is_numeric() && c != 'x' && !base_specified {
+                    if c.is_ascii_hexdigit() || c.is_ascii_digit() || (c == 'x' && !base_specified)
+                    {
+                        value.push(c);
+                        if c == 'x' {
+                            base_specified = true;
+                        };
+                    } else {
                         break;
                     }
-                    if c == 'x' {
-                        base_specified = true;
-                    }
-                    value.push(c);
                 }
                 Token::new(
                     TokenKind::Literal {
@@ -159,38 +161,83 @@ pub fn parse(input: &'static str) -> Vec<Token> {
                 )
             }
             _ => {
-                if c.is_alphabetic() {
+                if c.is_ascii_alphabetic() {
                     let mut value = String::new();
+                    value.push(c);
                     while let Some(c) = chars.next() {
-                        if c.is_alphanumeric() {
+                        if c.is_ascii_alphabetic() {
                             value.push(c);
                         } else {
                             break;
                         }
                     }
+
                     Token::new(TokenKind::Identifier, value.len())
-                } else if c.is_numeric() {
+                } else if c.is_ascii_digit() || c.is_ascii_hexdigit() {
                     let mut value = String::new();
+                    let mut is_hex = false;
+                    value.push(c);
                     while let Some(c) = chars.next() {
-                        if c.is_numeric() {
+                        if c.is_ascii_digit() || c.is_ascii_hexdigit() || (c == 'x' && !is_hex) {
                             value.push(c);
+                            if c == 'x' {
+                                is_hex = true;
+                            };
                         } else {
                             break;
                         }
                     }
+
                     Token::new(
                         TokenKind::Literal {
                             kind: LiteralKind::Int {
-                                base: Base::Decimal,
+                                base: if is_hex {
+                                    Base::Hexadecimal
+                                } else {
+                                    Base::Decimal
+                                },
                             },
                             value: value.clone(),
                         },
-                        value.clone().len(),
+                        value.len(),
                     )
                 } else {
                     Token::new(TokenKind::InvalidIdentifier, 1)
                 }
-            }
+            } // _ => {
+              //     if c.is_alphabetic() {
+              //         let mut value = String::new();
+              //         while let Some(c) = chars.next() {
+              //             if c.is_alphanumeric() {
+              //                 value.push(c);
+              //             } else {
+              //                 break;
+              //             }
+              //         }
+              //         Token::new(TokenKind::Identifier, value.len())
+              //     } else if c.is_numeric() {
+              //         let mut value = String::new();
+              //         while let Some(c) = chars.next() {
+              //             if c.is_numeric() {
+              //                 value.push(c);
+              //             } else {
+              //                 break;
+              //             }
+              //         }
+              //         dbg!(&value);
+              //         Token::new(
+              //             TokenKind::Literal {
+              //                 kind: LiteralKind::Int {
+              //                     base: Base::Decimal,
+              //                 },
+              //                 value: value.clone(),
+              //             },
+              //             value.clone().len(),
+              //         )
+              //     } else {
+              //         Token::new(TokenKind::InvalidIdentifier, 1)
+              //     }
+              // }
         };
         tokens.push(token);
     }
@@ -245,5 +292,177 @@ mod tests {
                 6
             )]
         );
+    }
+
+    #[test]
+    fn parse_semicolon() {
+        assert_eq!(
+            parse(";"),
+            vec![Token {
+                kind: TokenKind::Semi,
+                len: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_comma() {
+        assert_eq!(
+            parse(","),
+            vec![Token {
+                kind: TokenKind::Comma,
+                len: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_dot() {
+        assert_eq!(
+            parse("."),
+            vec![Token {
+                kind: TokenKind::Dot,
+                len: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_open_parenthesis() {
+        assert_eq!(
+            parse("("),
+            vec![Token {
+                kind: TokenKind::OpenParenthesis,
+                len: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_close_parenthesis() {
+        assert_eq!(
+            parse(")"),
+            vec![Token {
+                kind: TokenKind::CloseParenthesis,
+                len: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_open_brace() {
+        assert_eq!(
+            parse("{"),
+            vec![Token {
+                kind: TokenKind::OpenBrace,
+                len: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_close_brace() {
+        assert_eq!(
+            parse("}"),
+            vec![Token {
+                kind: TokenKind::CloseBrace,
+                len: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_open_bracket() {
+        assert_eq!(
+            parse("["),
+            vec![Token {
+                kind: TokenKind::OpenBracket,
+                len: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_close_bracket() {
+        assert_eq!(
+            parse("]"),
+            vec![Token {
+                kind: TokenKind::CloseBracket,
+                len: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_string() {
+        assert_eq!(
+            parse("\"hello\""),
+            vec![Token::new(
+                TokenKind::Literal {
+                    kind: LiteralKind::String,
+                    value: "hello".to_string(),
+                },
+                5
+            )]
+        );
+    }
+
+    #[test]
+    fn parse_int() {
+        assert_eq!(
+            parse("0xffff"),
+            vec![Token::new(
+                TokenKind::Literal {
+                    kind: LiteralKind::Int {
+                        base: Base::Hexadecimal
+                    },
+                    value: "0xffff".to_string(),
+                },
+                6
+            )]
+        );
+    }
+
+    #[test]
+    fn parse_int_base_10() {
+        assert_eq!(
+            parse("255"),
+            vec![Token::new(
+                TokenKind::Literal {
+                    kind: LiteralKind::Int {
+                        base: Base::Decimal
+                    },
+                    value: "255".to_string(),
+                },
+                3
+            )]
+        );
+    }
+
+    #[test]
+    fn parse_full() {
+        let input = r#"
+object "Contract" {
+    code {
+        datacopy(0, dataoffset("runtime"), datasize("runtime"))
+        return(0, datasize("runtime"))
+    }
+    object "runtime" {
+        code {
+            switch shr(0xf8, calldataload(0))
+            // calldata shifted by 248 bits to the right
+            // is equivalent of the byte slice calldata[0:1]
+            case 0x00 {
+                mstore(0, "Hello, World")
+                return(0, 0x20)
+            }
+            default { 
+                revert(0, 0)
+            }
+        }
+    }
+}
+"#;
+        println!("{:?}", parse(input));
     }
 }
